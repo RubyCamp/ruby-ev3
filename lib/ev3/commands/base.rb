@@ -1,66 +1,56 @@
 module EV3
   module Commands
     class Base
-      using EV3::CoreExtensions
+      ONE_DATA_SET = "\x01"
+      GLOBAL_VAR_INDEX0 = "\x60"
+      SEQUENCE_LOCAL = "\x00" #NOT NECESSARY
+      SEQUENCE_GLOBAL = "\x00" #NOT NECESSARY
 
-      include EV3::Validations::Constant
-      include EV3::Validations::Type
-
-      attr_accessor :sequence_number
-
-      def initialize(local_variables = 0, global_variables = 0)
-        @local_variables = local_variables
-        @global_variables = global_variables
-
-        # Sequence number is currently unused, so I am setting it to zero
-        self.sequence_number = 0
-        @bytes = []
+      def initialize(connection)
+        @message = []
+        @connection = connection
+        @local_variables = "\x00"
+        @global_variables = "\x00"
       end
 
-      # Converts the command to an array of bytes to send to the EV3
-      def to_bytes
-        message = self.sequence_number.to_little_endian_byte_array(2) + variable_size_bytes + @bytes.clone
-
-        # The message is proceeded by the message length
-        message.size.to_little_endian_byte_array(2) + message
+      def send_command
+        @message = SEQUENCE_LOCAL.bytes + SEQUENCE_GLOBAL.bytes +  @message
+        @message = [@message.size].pack("v").bytes + @message
+        write_message
+        return self
       end
 
-      # Append a byte or multiple bytes to the command
-      #
-      # @param [Integer, Array<Integer>] byte_or_bytes to append to the command
-      def <<(byte_or_bytes)
-        bytes = byte_or_bytes.arrayify
-        bytes.each { |byte| @bytes << byte }
+      def write_message
+        @connection.write @message.pack("C*")
       end
 
-      # String representation of the command
-      def to_s
-        "#{self.class.name}: #{self.to_bytes.map{|byte| byte.to_s(16)}.join(', ')}"
+      def get_data(format = nil )
+        begin
+          response_size = ReplyCodes::RESPONSE_BUFFER + @local_variables.bytes[0].to_i
+          response = @connection.read(response_size)
+          if (response == "")
+            return get_data(format)
+          end
+          if @local_variables.bytes[0] == 0
+            return response[ReplyCodes::REPLY].unpack("H*")[0].to_i
+          elsif  @local_variables.bytes[0] == 4
+            if(format.nil?)
+              return response[ReplyCodes::RESPONSE_BUFFER..(response.size)].unpack("e")[0]
+            else
+              return response[ReplyCodes::RESPONSE_BUFFER..(response.size)].unpack(format)[0]
+            end
+          elsif  @local_variables.bytes[0] == 5
+            return response[ReplyCodes::RESPONSE_BUFFER..(response.size)]
+          end
+        rescue
+          write_message
+          get_data
+        end
       end
 
-      # Raises an exception if the value isn't found in the range
-      #
-      # @param [Integer] value to check against the range
-      # @param [String] variable_name for the exception message
-      # @param [Range<Integer>] range the value should be in
-      def validate_range!(value, variable_name, range)
-        raise(ArgumentError, "#{variable_name} should be between #{range.min} and #{range.max}") unless range.include?(value)
-      end
-
-      private
-
-      def variable_size_bytes
-        #   Byte 6    Byte 5
-        #  76543210  76543210
-        #  --------  --------
-        #  llllllgg  gggggggg
-        #
-        #        gg  gggggggg  Global variables [0..MAX_COMMAND_GLOBALS]
-        #  llllll              Local variables  [0..MAX_COMMAND_LOCALS]
-        [
-          (@global_variables & 0xFF),
-          (((@local_variables << 2) & 0b1111_1100) | (((@global_variables >> 8) & 0b0000_0011)))
-        ]
+      def command_type(command)
+        @message = command.bytes + @local_variables.bytes + @global_variables.bytes + @message
+        return self
       end
     end
   end

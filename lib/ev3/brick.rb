@@ -1,66 +1,139 @@
-require "ev3/motor"
+require_relative 'commands/load_commands'
 
 module EV3
   class Brick
-    attr_reader :connection, :layer
-
-    include EV3::Validations::Type
-
-    # Create a new brick connection
-    #
-    # @param [instance subclassing Connections::Base] connection to the brick
     def initialize(connection)
       @connection = connection
-      @layer = DaisyChainLayer::EV3
     end
 
-    # Connect to the EV3
+    # EV3本体に接続する
     def connect
-      self.connection.connect
+      @connection.connect
     end
 
-    # Close the connection to the EV3
+    # EV3本体との接続を切断する
     def disconnect
-      self.connection.disconnect
+      @connection.disconnect unless @connection.nil?
     end
 
-    # Play a short beep on the EV3
-    def beep
-      self.execute(Commands::SoundTone.new)
+    # EV3が入力可能となるまで待つ
+    def motor_ready(*motors)
+      Commands::Output.new(@connection).
+        command_type(CommandType::DIRECT_COMMAND_REPLY).
+        ready(*motors).
+        send_command.
+        get_data
     end
 
-    # Play a tone on the EV3 using the specified options
-    def play_tone(volume, frequency, duration)
-      command = Commands::SoundTone.new(volume, frequency, duration)
-      self.execute(command)
+    # 指定したモーターのタコメーターの値（回転数）を取得する
+    def get_count(motor)
+      Commands::Output.new(@connection).
+        get_count(motor).
+        command_type(CommandType::DIRECT_COMMAND_REPLY).
+        send_command.
+        get_data("s<")
     end
 
-    Motor::constants.each do |motor|
-      motor_name = "motor_#{motor.downcase}"
-      variable_name = "@#{motor_name}"
-      define_method(motor_name) do
-        if instance_variable_defined?(variable_name)
-          instance_variable_get(variable_name)
-        else
-          instance_variable_set(variable_name, Motor.new(Motor::const_get(motor), self))
-        end
-      end
-    end
-
-    # Fetches the motor attached to the motor port
-    # @param [sym in [:a, :b, :c, :d]] motor_port
-    # @example get motor attached to port a
-    #   motor_a = brick.motor(:a)
-    def motor(motor_port)
-      send("motor_#{motor_port.to_s.downcase}")
-    end
-
-    # Execute the command
+    # 接続しているセンサーの情報を取得する
+    # 戻り値は、ポート1から4の順に下記の左辺を連結した文字列になる
     #
-    # @param [instance subclassing Commands::Base] command to execute
-    def execute(command)
-      validate_type!(command, 'command', EV3::Commands::Base)
-      self.connection.write(command)
+    #   "\x20" =>  gyro
+    #   "\x1D" =>  color
+    #   "\x1E" =>  distance
+    #   "\x10" =>  touch
+    #   "\x7E" =>  empty
+    def list_inputs
+      Commands::Input.new(@connection).
+        list_sensors.command_type(CommandType::DIRECT_COMMAND_REPLY).
+        send_command.
+        get_data
+    end
+
+    # デバイスの情報をクリアする (e.c. counters, angle, ...)
+    def clear_all
+      Commands::Input.new(@connection).
+        clear_all.
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        send_command
+    end
+
+    # 指定したセンサーの情報をクリアする
+    def clear_changes(sensor)
+      Commands::Input.new(@connection).
+        clear_changes(sensor).
+        command_type(CommandType::DIRECT_COMMAND_REPLY).
+        send_command
+    end
+
+    # 指定したセンサーとそのモードにおける値を取得する
+    # see:
+    #   http://www.afrel.co.jp/archives/category/technical-information/tech-ev3-hardware
+    def get_sensor(sensor, mode = 0)
+      Commands::Input.new(@connection).
+        sensor(sensor, mode).
+        command_type(CommandType::DIRECT_COMMAND_REPLY).
+        send_command.
+        get_data
+    end
+
+    # 指定した速度で、指定したモーターを動かす
+    def start(velocity, *motors)
+      Commands::Output.new(@connection).
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        speed(velocity, *motors).
+        start(*motors).
+        send_command
+    end
+
+    # 指定したモーターの速度を設定する
+    def speed(velocity, *motors)
+      Commands::Output.new(@connection).
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        speed(velocity, *motors).
+        send_command
+    end
+
+    # モーターを指定した速度で指定した角度だけ動かす
+    #
+    # degrees: フルスピードでモーターを動かす角度
+    # precision: 終盤で減速しつつモーターを動かす角度
+    def step_velocity(velocity, degrees, precision, *motors)
+      Commands::Output.new(@connection).
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        step_velocity(velocity, degrees, precision, *motors).
+        send_command
+    end
+
+    # 指定したモーターのタコメーターの値（回転数）をリセットする
+    def reset(*motors)
+      Commands::Output.new(@connection).
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        reset(*motors).send_command
+    end
+
+    # 指定したモーターの回転方向を正方向にする
+    def run_forward(*motors)
+     Commands::Output.new(@connection).
+       command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+       reverse_polarity(1, *motors).
+       send_command
+    end
+
+    # 指定したモーターの回転方向を反転する
+    def reverse_polarity(*motors)
+      Commands::Output.new(@connection).
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        reverse_polarity(0, *motors).
+        send_command
+    end
+
+    # 指定したモーターの動きを止める
+    #
+    # force_break: true だと即座にとまり、false だと慣性がつく
+    def stop(force_break, *motors)
+      Commands::Output.new(@connection).
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        stop(force_break, *motors).send_command
     end
   end
 end

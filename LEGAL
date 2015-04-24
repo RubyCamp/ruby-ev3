@@ -1,0 +1,42 @@
+LEGAL NOTICE INFORMATION
+------------------------
+
+All the files in this distribution are covered under either the
+ev3 license (see the file LICENSE) except some files mentioned
+below.
+
+Gemfile
+LICENSE.txt
+README.md
+Rakefile
+TODO
+examples/xbox_controller_robot.rb
+lib/ev3.rb
+lib/ev3/brick.rb
+lib/ev3/commands.rb
+lib/ev3/commands/base.rb
+lib/ev3/commands/output.rb
+lib/ev3/commands/output_polarity.rb
+lib/ev3/commands/output_speed.rb
+lib/ev3/commands/output_start.rb
+lib/ev3/commands/output_stop.rb
+lib/ev3/commands/sound_tone.rb
+lib/ev3/connections/base.rb
+lib/ev3/connections/bluetooth.rb
+lib/ev3/connections/wifi.rb
+lib/ev3/constants.rb
+lib/ev3/core_extensions.rb
+lib/ev3/motor.rb
+lib/ev3/validations.rb
+lib/ev3/validations/constant.rb
+lib/ev3/validations/type.rb
+lib/ev3/version.rb
+ruby-ev3.gemspec
+spec/ev3/core_extensions_spec.rb
+spec/spec_helper.rb
+
+  These were forked from ruby-ev3 ( https://github.com/jcnnghm/ruby-ev3/tree/823ff4bb70ec1ed23f1b2dd09b2ac992ed0d164d ).
+  After that we modified.
+  Copyright (c) 2014 Justin Cunningham
+  These files were released under the MIT license:
+  https://github.com/jcnnghm/ruby-ev3/blob/master/LICENSE.txt .

@@ -29,6 +29,7 @@ module EV3
         @message += ByteCodes::OUTPUT_SPEED.bytes +
         Layers::LAYER_0.bytes +
         [all_motors] +
+        ArgumentSize::BYTE.bytes +
         [velocity]
         return self
       end

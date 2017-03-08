@@ -135,5 +135,23 @@ module EV3
         command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
         stop(force_break, *motors).send_command
     end
+
+    # LEDの色をcolorに設定する
+    # 0 : LEDオフ
+    # 1 : 緑
+    # 2 : 赤
+    # 3 : 橙
+    # 4 : 緑点滅(パターン1)
+    # 5 : 赤点滅(パターン1)
+    # 6 : 橙点滅(パターン1)
+    # 7 : 緑点滅(パターン2)
+    # 8 : 赤点滅(パターン2)
+    # 9 : 橙点滅(パターン2)
+    def set_led(color)
+      Commands::UiWrite.new(@connection).
+        set_led.
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        send_command
+    end
   end
 end

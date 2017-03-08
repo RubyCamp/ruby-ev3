@@ -44,6 +44,10 @@ module EV3
     GET_BUMPS = "\x1F"
   end
 
+  module UiWriteSubcodes
+    LED = 27
+  end
+
   module ReplyCodes
     SIZE1 = 0
     SIZE2 = 1

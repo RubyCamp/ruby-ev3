@@ -153,5 +153,24 @@ module EV3
         command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
         send_command
     end
+
+    # 音を鳴らす
+    # volume: 音量(0-100)
+    # freq: 周波数(250-10000)
+    # duratinon: 長さ(ミリ秒単位、1000 = 1秒間)
+    def play_tone(volume, freq, duration)
+      Commands::Sound.new(@connection).
+        set_tone(volume, freq, duration).
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        send_command
+    end
+    
+    # 音を止める
+    def stop_sound
+      Commands::Sound.new(@connection).
+        stop_sound.
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        send_command
+    end
   end
 end

@@ -48,6 +48,13 @@ module EV3
     LED = 27
   end
 
+  module SoundSubCodes
+    BREAK = 0
+    TONE = 1
+    PLAY = 2
+    REPEAT = 3
+  end
+
   module ReplyCodes
     SIZE1 = 0
     SIZE2 = 1

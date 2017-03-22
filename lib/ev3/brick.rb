@@ -135,5 +135,42 @@ module EV3
         command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
         stop(force_break, *motors).send_command
     end
+
+    # LEDの色をcolorに設定する
+    # 0 : LEDオフ
+    # 1 : 緑
+    # 2 : 赤
+    # 3 : 橙
+    # 4 : 緑点滅(パターン1)
+    # 5 : 赤点滅(パターン1)
+    # 6 : 橙点滅(パターン1)
+    # 7 : 緑点滅(パターン2)
+    # 8 : 赤点滅(パターン2)
+    # 9 : 橙点滅(パターン2)
+    def set_led(color)
+      Commands::UiWrite.new(@connection).
+        set_led.
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        send_command
+    end
+
+    # 音を鳴らす
+    # volume: 音量(0-100)
+    # freq: 周波数(250-10000)
+    # duratinon: 長さ(ミリ秒単位、1000 = 1秒間)
+    def play_tone(volume, freq, duration)
+      Commands::Sound.new(@connection).
+        set_tone(volume, freq, duration).
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        send_command
+    end
+    
+    # 音を止める
+    def stop_sound
+      Commands::Sound.new(@connection).
+        stop_sound.
+        command_type(CommandType::DIRECT_COMMAND_NO_REPLY).
+        send_command
+    end
   end
 end
